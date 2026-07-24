@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pop a balloon 🎈</title>
+<style>
+  :root{
+    --pink1: #ffd6e8;
+    --pink2: #ff8fb3;
+    --pink3: #ff5c8d;
+    --deep: #7a1f3d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background: linear-gradient(160deg, #fff0f5, var(--pink1) 40%, var(--pink2));
+    font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+    overflow:hidden;
+    position:relative;
+  }
+
+  header{
+    text-align:center;
+    padding: 26px 16px 8px;
+    position:relative;
+    z-index:5;
+  }
+  header h1{
+    color: var(--deep);
+    font-size: 1.6rem;
+    margin:0 0 6px;
+  }
+  header p{
+    color:#a94569;
+    margin:0;
+    font-size:0.95rem;
+  }
+
+  #stage{
+    position:relative;
+    width:100%;
+    height: calc(100vh - 90px);
+    overflow:hidden;
+  }
+
+  .balloon{
+    position:absolute;
+    bottom:-140px;
+    width:70px;
+    height:90px;
+    cursor:pointer;
+    animation-name: floatUp;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+  .balloon .body{
+    width:100%;
+    height:100%;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    box-shadow: inset -8px -10px 0 rgba(0,0,0,0.08), 0 6px 14px rgba(0,0,0,0.15);
+    position:relative;
+  }
+  .balloon .body::after{
+    content:'';
+    position:absolute;
+    left:50%;
+    bottom:-10px;
+    transform: translateX(-50%);
+    width:0;
+    height:0;
+    border-left:6px solid transparent;
+    border-right:6px solid transparent;
+    border-top:12px solid inherit;
+  }
+  .balloon .string{
+    position:absolute;
+    top:100%;
+    left:50%;
+    width:1px;
+    height:60px;
+    background: rgba(122,31,61,0.35);
+  }
+
+  @keyframes floatUp{
+    from{ transform: translateY(0) translateX(0); }
+    to{ transform: translateY(-135vh) translateX(var(--drift, 0px)); }
+  }
+
+  .pop-word{
+    position:absolute;
+    font-weight:700;
+    color: var(--deep);
+    background: #fff;
+    padding: 8px 16px;
+    border-radius: 999px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+    pointer-events:none;
+    animation: wordPop 1.1s ease forwards;
+    white-space:nowrap;
+    font-size: 1.1rem;
+  }
+  @keyframes wordPop{
+    0%{ transform: translate(-50%,-50%) scale(0.3); opacity:0; }
+    25%{ transform: translate(-50%,-50%) scale(1.15); opacity:1; }
+    40%{ transform: translate(-50%,-50%) scale(1); opacity:1; }
+    100%{ transform: translate(-50%,-90%) scale(1); opacity:0; }
+  }
+
+  .confetti-bit{
+    position:absolute;
+    width:8px;
+    height:8px;
+    border-radius:2px;
+    pointer-events:none;
+    animation: confetti 0.8s ease-out forwards;
+  }
+  @keyframes confetti{
+    0%{ transform: translate(0,0) rotate(0deg); opacity:1; }
+    100%{ transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity:0; }
+  }
+
+  #score-bar{
+    position:fixed;
+    top:16px;
+    right:20px;
+    background:#fff;
+    color: var(--deep);
+    font-weight:700;
+    padding: 8px 18px;
+    border-radius: 999px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    z-index:6;
+    font-size:0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="score-bar">popped: <span id="score">0</span></div>
+
+<header>
+  <h1>pop a balloon 🎈</h1>
+  <p>tap the balloons before they float away~</p>
+</header>
+
+<div id="stage"></div>
+
+<script>
+  const compliments = [
+    "gorgeous", "marvelous", "stunning", "adorable", "gorgeous soul",
+    "beautiful", "cutie", "dazzling", "radiant", "so pretty",
+    "amazing", "one of a kind", "flawless", "charming", "perfect",
+    "lovely", "angel", "breathtaking", "precious", "queen"
+  ];
+
+  const colors = ["#ff6b9d", "#ff8fb3", "#ff5c8d", "#ffa3c4", "#f75990", "#ffc2d9"];
+
+  const stage = document.getElementById('stage');
+  const scoreEl = document.getElementById('score');
+  let score = 0;
+
+  function spawnBalloon(){
+    const balloon = document.createElement('div');
+    balloon.className = 'balloon';
+
+    const left = Math.random() * 85;
+    const duration = 7 + Math.random() * 5;
+    const drift = (Math.random() * 120 - 60) + 'px';
+    const color = colors[Math.floor(Math.random()*colors.length)];
+
+    balloon.style.left = left + 'vw';
+    balloon.style.setProperty('--drift', drift);
+    balloon.style.animationDuration = duration + 's';
+
+    balloon.innerHTML = `<div class="string"></div><div class="body" style="background:${color}; border-top-color:${color};"></div>`;
+
+    balloon.addEventListener('click', () => popBalloon(balloon, color));
+    balloon.addEventListener('animationend', () => balloon.remove());
+
+    stage.appendChild(balloon);
+  }
+
+  function popBalloon(balloon, color){
+    const rect = balloon.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const x = rect.left - stageRect.left + rect.width/2;
+    const y = rect.top - stageRect.top + rect.height/2;
+
+    // confetti burst
+    for(let i=0;i<12;i++){
+      const bit = document.createElement('div');
+      bit.className = 'confetti-bit';
+      bit.style.left = x + 'px';
+      bit.style.top = y + 'px';
+      bit.style.background = color;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 40 + Math.random()*40;
+      bit.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+      bit.style.setProperty('--dy', Math.sin(angle)*dist + 'px');
+      bit.style.setProperty('--rot', (Math.random()*360) + 'deg');
+      stage.appendChild(bit);
+      setTimeout(() => bit.remove(), 850);
+    }
+
+    // compliment word
+    const word = document.createElement('div');
+    word.className = 'pop-word';
+    word.style.left = x + 'px';
+    word.style.top = y + 'px';
+    word.textContent = compliments[Math.floor(Math.random()*compliments.length)];
+    stage.appendChild(word);
+    setTimeout(() => word.remove(), 1150);
+
+    score++;
+    scoreEl.textContent = score;
+
+    balloon.remove();
+  }
+
+  setInterval(spawnBalloon, 900);
+  for(let i=0;i<4;i++) setTimeout(spawnBalloon, i*300);
+</script>
+
+</body>
+</html>
+
